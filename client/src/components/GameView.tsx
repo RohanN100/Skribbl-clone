@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import type { Player, ChatMessage } from "../types";
+import { socket } from "../socket/socket";
 import { CanvasBoard } from "./CanvasBoard";
 import { DrawingControls } from "./DrawingControls";
 import { PlayerList } from "./PlayerList";
@@ -42,6 +43,9 @@ export const GameView: React.FC<GameViewProps> = ({
 
   const handleClearCanvas = () => {
     setClearTrigger((prev) => prev + 1);
+    if (isDrawer) {
+      socket.emit("draw_clear");
+    }
   };
 
   const drawerPlayer = players.find((p) => p.id === drawerId);

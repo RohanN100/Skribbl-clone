@@ -558,7 +558,7 @@ export function registerSocketHandlers(io: Server): void {
     // ─────────────────────────────────────
     // DRAWING EVENTS
     // ─────────────────────────────────────
-    socket.on("draw_start", (data: { x: number; y: number }) => {
+    socket.on("draw_start", (data: { x: number; y: number; color?: string; size?: number }) => {
       const room = roomManager.getRoomByPlayerId(socket.id);
       if (!room) return;
 
@@ -571,10 +571,12 @@ export function registerSocketHandlers(io: Server): void {
       socket.to(room.id).emit("draw_start", {
         x: data.x,
         y: data.y,
+        color: data.color || "#0f172a",
+        size: data.size || 6,
       });
     });
 
-    socket.on("draw_move", (data: { x: number; y: number }) => {
+    socket.on("draw_move", (data: { x: number; y: number; color?: string; size?: number }) => {
       const room = roomManager.getRoomByPlayerId(socket.id);
       if (!room) return;
 
@@ -587,6 +589,8 @@ export function registerSocketHandlers(io: Server): void {
       socket.to(room.id).emit("draw_move", {
         x: data.x,
         y: data.y,
+        color: data.color || "#0f172a",
+        size: data.size || 6,
       });
     });
 
@@ -601,6 +605,19 @@ export function registerSocketHandlers(io: Server): void {
       if (!drawer || drawer.id !== socket.id) return;
 
       socket.to(room.id).emit("draw_end");
+    });
+
+    socket.on("draw_clear", () => {
+      const room = roomManager.getRoomByPlayerId(socket.id);
+      if (!room) return;
+
+      const game = room.getGame();
+      if (!game || game.isFinished()) return;
+
+      const drawer = game.getCurrentDrawer();
+      if (!drawer || drawer.id !== socket.id) return;
+
+      io.to(room.id).emit("draw_clear");
     });
 
     // ─────────────────────────────────────

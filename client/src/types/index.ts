@@ -66,11 +66,15 @@ export interface TimerTickPayload {
 export interface DrawStartPayload {
   x: number;
   y: number;
+  color?: string;
+  size?: number;
 }
 
 export interface DrawMovePayload {
   x: number;
   y: number;
+  color?: string;
+  size?: number;
 }
 
 export interface GuessSubmittedPayload {

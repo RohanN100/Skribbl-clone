@@ -28,7 +28,7 @@ export const CanvasBoard: React.FC<CanvasBoardProps> = ({
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }, []);
 
-  // Listen for clear triggers
+  // Listen for clear triggers from parent or drawer clear action
   useEffect(() => {
     clearCanvas();
   }, [clearTrigger, clearCanvas]);
@@ -68,10 +68,21 @@ export const CanvasBoard: React.FC<CanvasBoardProps> = ({
     const handleRemoteDrawStart = (data: DrawStartPayload) => {
       isRemoteDrawing = true;
       const rect = canvas.getBoundingClientRect();
-      remoteLastPos = {
-        x: data.x * rect.width,
-        y: data.y * rect.height,
-      };
+      const currentX = data.x * rect.width;
+      const currentY = data.y * rect.height;
+      remoteLastPos = { x: currentX, y: currentY };
+
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.save();
+        ctx.beginPath();
+        const strokeColor = data.color || "#0f172a";
+        const strokeSize = data.size || 6;
+        ctx.arc(currentX, currentY, strokeSize / 2, 0, Math.PI * 2);
+        ctx.fillStyle = strokeColor;
+        ctx.fill();
+        ctx.restore();
+      }
     };
 
     const handleRemoteDrawMove = (data: DrawMovePayload) => {
@@ -83,11 +94,13 @@ export const CanvasBoard: React.FC<CanvasBoardProps> = ({
       const rect = canvas.getBoundingClientRect();
       const currentX = data.x * rect.width;
       const currentY = data.y * rect.height;
+      const strokeColor = data.color || "#0f172a";
+      const strokeSize = data.size || 6;
 
       ctx.save();
       ctx.beginPath();
-      ctx.strokeStyle = "#0f172a"; // Crisp dark ink stroke
-      ctx.lineWidth = 4;
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = strokeSize;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
       ctx.moveTo(remoteLastPos.x, remoteLastPos.y);
@@ -103,16 +116,22 @@ export const CanvasBoard: React.FC<CanvasBoardProps> = ({
       remoteLastPos = null;
     };
 
+    const handleRemoteDrawClear = () => {
+      clearCanvas();
+    };
+
     socket.on("draw_start", handleRemoteDrawStart);
     socket.on("draw_move", handleRemoteDrawMove);
     socket.on("draw_end", handleRemoteDrawEnd);
+    socket.on("draw_clear", handleRemoteDrawClear);
 
     return () => {
       socket.off("draw_start", handleRemoteDrawStart);
       socket.off("draw_move", handleRemoteDrawMove);
       socket.off("draw_end", handleRemoteDrawEnd);
+      socket.off("draw_clear", handleRemoteDrawClear);
     };
-  }, []);
+  }, [clearCanvas]);
 
   // Helper to get normalized coordinates (0.0 to 1.0)
   const getNormalizedPos = useCallback((e: React.MouseEvent | React.TouchEvent) => {
@@ -147,8 +166,13 @@ export const CanvasBoard: React.FC<CanvasBoardProps> = ({
     isDrawingRef.current = true;
     lastPosRef.current = { x: pos.x * pos.rectWidth, y: pos.y * pos.rectHeight };
 
-    // Emit to backend
-    socket.emit("draw_start", { x: pos.x, y: pos.y });
+    // Emit color & size to backend
+    socket.emit("draw_start", {
+      x: pos.x,
+      y: pos.y,
+      color: currentColor,
+      size: lineWidth,
+    });
 
     // Local draw point
     const canvas = canvasRef.current;
@@ -192,8 +216,13 @@ export const CanvasBoard: React.FC<CanvasBoardProps> = ({
 
     lastPosRef.current = { x: currentX, y: currentY };
 
-    // Emit to backend
-    socket.emit("draw_move", { x: pos.x, y: pos.y });
+    // Emit color & size to backend
+    socket.emit("draw_move", {
+      x: pos.x,
+      y: pos.y,
+      color: currentColor,
+      size: lineWidth,
+    });
   };
 
   const handleEnd = () => {
