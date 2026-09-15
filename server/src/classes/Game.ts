@@ -35,7 +35,7 @@ private turnTimer: ReturnType<typeof setInterval> | null;
     this.currentDrawerIndex = 0;
     this.currentWord = null;
     this.status = "WAITING";
-    this.turnDuration = 90;
+    this.turnDuration = 40;
 this.turnTimer = null;
     this.guessedPlayers = new Set();
     this.dbGameId = null;
