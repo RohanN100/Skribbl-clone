@@ -1,4 +1,13 @@
+import { randomUUID } from "crypto";
 import { Room } from "./Room.js";
+
+function generateUUID(): string {
+  try {
+    return randomUUID();
+  } catch (e) {
+    return Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+  }
+}
 
 export class RoomManager {
   private rooms: Map<string, Room>;
@@ -8,10 +17,10 @@ export class RoomManager {
   }
 
   createRoom(code: string): Room {
-    const roomId = crypto.randomUUID();
+    const roomId = generateUUID();
+    const cleanCode = code.trim().toUpperCase();
 
-    const room = new Room(roomId, code);
-
+    const room = new Room(roomId, cleanCode);
     this.rooms.set(roomId, room);
 
     return room;
@@ -22,8 +31,10 @@ export class RoomManager {
   }
 
   getRoomByCode(code: string): Room | undefined {
+    if (!code) return undefined;
+    const cleanCode = code.trim().toUpperCase();
     return Array.from(this.rooms.values()).find(
-      (room) => room.code === code
+      (room) => room.code.trim().toUpperCase() === cleanCode
     );
   }
 
@@ -41,7 +52,6 @@ export class RoomManager {
     for (const room of this.rooms.values()) {
       if (room.hasPlayer(playerId)) {
         room.removePlayer(playerId);
-
         return room;
       }
     }
