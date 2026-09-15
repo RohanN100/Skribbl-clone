@@ -8,4 +8,15 @@ export const socket: Socket = io(SERVER_URL, {
   reconnection: true,
   reconnectionAttempts: 10,
   reconnectionDelay: 1000,
+
+
+  
+});
+
+socket.on("connect", () => {
+  console.log("✅ Connected to Render:", socket.id);
+});
+
+socket.on("connect_error", (error) => {
+  console.error("❌ Connection failed:", error.message);
 });
