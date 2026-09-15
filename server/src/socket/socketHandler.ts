@@ -1,4 +1,5 @@
 import { Server, Socket } from "socket.io";
+import { randomUUID } from "crypto";
 import { Player } from "../classes/Player.js";
 import { RoomManager } from "../classes/RoomManager.js";
 import { Game } from "../classes/Game.js";
@@ -8,6 +9,14 @@ import { prisma } from "../config/prisma.js";
 
 const roomManager = new RoomManager();
 const wordService = new WordService();
+
+function generateUUID(): string {
+  try {
+    return randomUUID();
+  } catch (e) {
+    return Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+  }
+}
 
 async function startNextTurn(
   io: Server,
@@ -341,8 +350,8 @@ export function registerSocketHandlers(io: Server): void {
           return;
         }
 
-        // Create Game
-        const game = new Game(crypto.randomUUID(), room.id);
+        // Create Game with safe UUID generator
+        const game = new Game(generateUUID(), room.id);
 
         // Attempt DB persistence if room.dbRoomId exists
         if (room.dbRoomId !== null) {
@@ -402,11 +411,11 @@ export function registerSocketHandlers(io: Server): void {
 
         console.log(`🎮 Game ${game.id} started in room ${room.code}`);
         console.log(`🎨 Drawer: ${drawer.username}`);
-      } catch (error) {
+      } catch (error: any) {
         console.error("❌ Failed to start game:", error);
 
         socket.emit("start_game_error", {
-          message: "Failed to start game",
+          message: error?.message || "Failed to start game",
         });
       }
     });
