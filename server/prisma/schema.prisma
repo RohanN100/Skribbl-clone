@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String
+  createdAt DateTime @default(now())
+
+  gamePlayers GamePlayer[]
+}
+
+model Room {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  createdAt DateTime @default(now())
+
+  games Game[]
+}
+
+model Game {
+  id          Int      @id @default(autoincrement())
+  roomId      Int
+  currentRound Int     @default(1)
+  totalRounds  Int     @default(3)
+  status      GameStatus @default(WAITING)
+  createdAt   DateTime  @default(now())
+  startedAt   DateTime?
+  endedAt     DateTime?
+
+  room        Room         @relation(fields: [roomId], references: [id])
+  gamePlayers GamePlayer[]
+}
+
+model GamePlayer {
+  id       Int @id @default(autoincrement())
+  gameId   Int
+  userId   Int
+  score    Int @default(0)
+
+  game Game @relation(fields: [gameId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([gameId, userId])
+}
+
+model Word {
+  id       Int    @id @default(autoincrement())
+  word     String
+  category String?
+}
+
+enum GameStatus {
+  WAITING
+  PLAYING
+  FINISHED
+}
